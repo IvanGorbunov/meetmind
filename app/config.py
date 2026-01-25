@@ -58,6 +58,21 @@ class Settings(BaseSettings):
         description="ChromaDB persistence directory"
     )
     
+    # RAG Configuration
+    rag_prompt_template: str = Field(
+        default="""Ты ассистент для анализа рабочих созвонов.
+Отвечай только на основе предоставленного контекста.
+Если информации нет в контексте, скажи об этом честно.
+
+Контекст:
+{context}
+
+Вопрос: {question}
+
+Ответ:""",
+        description="RAG prompt template with {context} and {question} placeholders"
+    )
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

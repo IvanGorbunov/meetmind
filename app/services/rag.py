@@ -2,26 +2,33 @@ from typing import List, Dict, Any
 import os
 
 from langchain_chroma import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
 from app.config import get_settings
 from app.services.embeddings import get_embeddings
 from app.services.llm import get_llm
 
 
+def _format_docs(docs: List[Document]) -> str:
+    """Format documents into a single context string."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
 class RAGService:
     """
     RAG (Retrieval-Augmented Generation) service.
-    Handles document indexing and question-answering.
+    Handles document indexing and question-answering using LCEL.
     """
     
     def __init__(self):
         self.settings = get_settings()
         self._vectorstore = None
-        self._qa_chain = None
+        self._rag_chain = None
+        self._retriever = None
         
         # Text splitter configuration
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -30,20 +37,9 @@ class RAGService:
             separators=["\n\n", "\n", ". ", " ", ""]
         )
         
-        # RAG prompt template
-        self.prompt_template = PromptTemplate(
-            template="""Ты ассистент для анализа рабочих созвонов.
-Отвечай только на основе предоставленного контекста.
-Если информации нет в контексте, скажи об этом честно.
-
-Контекст:
-{context}
-
-Вопрос: {question}
-
-Ответ:""",
-            input_variables=["context", "question"]
-        )
+        # RAG prompt template using ChatPromptTemplate (LCEL-compatible)
+        # Loaded from environment variable or default
+        self.prompt = ChatPromptTemplate.from_template(self.settings.rag_prompt_template)
     
     @property
     def vectorstore(self) -> Chroma:
@@ -59,22 +55,29 @@ class RAGService:
         return self._vectorstore
     
     @property
-    def qa_chain(self) -> RetrievalQA:
-        """Lazy-load QA chain."""
-        if self._qa_chain is None:
-            retriever = self.vectorstore.as_retriever(
+    def retriever(self):
+        """Lazy-load retriever."""
+        if self._retriever is None:
+            self._retriever = self.vectorstore.as_retriever(
                 search_type="similarity",
                 search_kwargs={"k": 5}
             )
-            
-            self._qa_chain = RetrievalQA.from_chain_type(
-                llm=get_llm(),
-                chain_type="stuff",
-                retriever=retriever,
-                chain_type_kwargs={"prompt": self.prompt_template},
-                return_source_documents=True
+        return self._retriever
+    
+    @property
+    def rag_chain(self):
+        """Lazy-load RAG chain using LCEL."""
+        if self._rag_chain is None:
+            # Build LCEL chain: retrieve -> format -> prompt -> llm -> parse
+            self._rag_chain = (
+                RunnablePassthrough.assign(
+                    context=lambda x: _format_docs(self.retriever.invoke(x["question"]))
+                )
+                | self.prompt
+                | get_llm()
+                | StrOutputParser()
             )
-        return self._qa_chain
+        return self._rag_chain
     
     def index_document(self, content: str, metadata: Dict[str, Any] = None) -> int:
         """
@@ -103,7 +106,7 @@ class RAGService:
     
     def search(self, question: str) -> Dict[str, Any]:
         """
-        Search for answer using RAG.
+        Search for answer using RAG with LCEL.
         
         Args:
             question: User question
@@ -111,11 +114,15 @@ class RAGService:
         Returns:
             Dict with 'answer' and 'sources'
         """
-        result = self.qa_chain.invoke({"query": question})
+        # Get source documents separately for transparency
+        source_docs = self.retriever.invoke(question)
+        
+        # Run the RAG chain
+        answer = self.rag_chain.invoke({"question": question})
         
         # Extract source information
         sources = []
-        for doc in result.get("source_documents", []):
+        for doc in source_docs:
             source_info = {
                 "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
                 "metadata": doc.metadata
@@ -123,7 +130,7 @@ class RAGService:
             sources.append(source_info)
         
         return {
-            "answer": result["result"],
+            "answer": answer,
             "sources": sources
         }
     
