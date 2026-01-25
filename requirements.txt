@@ -1,0 +1,31 @@
+# API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# Vector Store
+chromadb>=0.4.0
+langchain>=0.1.0
+langchain-chroma>=0.1.0
+langchain-text-splitters>=0.0.1
+
+# OpenAI Provider
+langchain-openai>=0.0.5
+openai>=1.0.0
+
+# Local Provider (HuggingFace models)
+langchain-huggingface>=0.0.3
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# Ollama Provider
+langchain-ollama>=0.0.3
+
+# Configuration
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
