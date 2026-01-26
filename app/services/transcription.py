@@ -9,8 +9,12 @@ from pathlib import Path
 from typing import Optional
 import tempfile
 
-import whisperx
 import torch
+
+# Fix for PyTorch 2.6+ compatibility with WhisperX/Pyannote
+os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
+
+import whisperx
 
 from app.config import get_settings
 
