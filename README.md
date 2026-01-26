@@ -82,6 +82,51 @@ curl -X POST "http://localhost:8000/search" \
 curl http://localhost:8000/search/stats
 ```
 
+### Transcribe Audio (WhisperX)
+```bash
+curl -X POST "http://localhost:8000/media/transcribe" \
+  -F "file=@meeting.mp3" \
+  -F "language=ru"
+```
+
+---
+
+## 🎤 Audio Transcription Setup
+
+### System Requirements
+
+**ffmpeg** is required for audio processing:
+
+```bash
+# Ubuntu/Debian
+sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows (with Chocolatey)
+choco install ffmpeg
+```
+
+**CUDA** (recommended for GPU acceleration):
+- CUDA 11.8+ and cuDNN required for GPU mode
+- CPU mode works but is significantly slower
+
+### WhisperX Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WHISPERX_MODEL` | `large-v3` | Model: tiny, base, small, medium, large-v2, large-v3 |
+| `WHISPERX_DEVICE` | `cuda` | Device: cuda or cpu |
+| `WHISPERX_COMPUTE_TYPE` | `float16` | Compute: float16, int8 (GPU), float32 (CPU) |
+
+Example `.env`:
+```bash
+WHISPERX_MODEL=large-v3
+WHISPERX_DEVICE=cuda
+WHISPERX_COMPUTE_TYPE=float16
+```
+
 ---
 
 ## ⚙️ Provider Configuration
@@ -110,16 +155,19 @@ meetmind/
 │   ├── config.py            # Environment settings
 │   ├── api/
 │   │   ├── transcripts.py   # Upload & history endpoints
-│   │   └── search.py        # Search endpoint
+│   │   ├── search.py        # Search endpoint
+│   │   └── media.py         # Audio transcription endpoint
 │   ├── db/
 │   │   ├── database.py      # SQLite connection
 │   │   └── models.py        # Data models
 │   └── services/
 │       ├── embeddings/      # 3 embeddings providers
 │       ├── llm/             # 3 LLM providers
-│       └── rag.py           # RAG pipeline
+│       ├── rag.py           # RAG pipeline
+│       └── transcription.py # WhisperX transcription
 ├── chroma_db/               # Vector DB (auto-created)
 ├── meetmind.db              # SQLite (auto-created)
+├── media_uploads/           # Temp audio files (auto-created)
 ├── .env.example
 ├── requirements.txt
 └── README.md

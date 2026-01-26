@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.db.database import init_db
 from app.api.transcripts import router as transcripts_router
 from app.api.search import router as search_router
+from app.api.media import router as media_router
 
 
 @asynccontextmanager
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(transcripts_router)
     app.include_router(search_router)
+    app.include_router(media_router)
     
     @app.get("/", tags=["Health"])
     async def root():

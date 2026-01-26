@@ -58,6 +58,24 @@ class Settings(BaseSettings):
         description="ChromaDB persistence directory"
     )
     
+    # WhisperX (Audio Transcription)
+    whisperx_model: str = Field(
+        default="large-v3",
+        description="WhisperX model size: tiny, base, small, medium, large-v2, large-v3"
+    )
+    whisperx_device: str = Field(
+        default="cuda",
+        description="Device for WhisperX: cuda or cpu"
+    )
+    whisperx_compute_type: str = Field(
+        default="float16",
+        description="Compute type: float16, int8 (for GPU), or float32 (for CPU)"
+    )
+    media_upload_dir: str = Field(
+        default="./media_uploads",
+        description="Directory for temporary media file uploads"
+    )
+    
     # RAG Configuration
     rag_prompt_template: str = Field(
         default="""Ты ассистент для анализа рабочих созвонов.
