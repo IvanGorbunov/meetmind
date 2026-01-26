@@ -74,7 +74,13 @@ curl http://localhost:8000/transcripts
 ```bash
 curl -X POST "http://localhost:8000/search" \
   -H "Content-Type: application/json" \
-  -d '{"question": "When did we discuss the deadline?"}'
+  -d '{
+    "question": "When did we discuss the deadline?",
+    "date_from": "2024-01-01",
+    "date_to": "2024-01-31"
+  }'
+
+# Note: If dates are not provided, search defaults to the last 7 days.
 ```
 
 ### Stats
@@ -143,6 +149,12 @@ WHISPERX_COMPUTE_TYPE=float16
 | **local** | HuggingFace model (GPU) | Ollama | GPU 8GB+, Ollama installed |
 | **openai** | OpenAI API | GPT-4 | API key |
 | **huggingface** | HF Inference API | HF Inference API | HF token |
+
+### Search Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RAG_TOP_K` | `5` | Number of similar segments to retrieve |
 
 ---
 

@@ -207,6 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 
-chroma_db/
-meetmind.db
+chroma_db*/
+meetmind.db*
 promt.md
+verify_changes.py

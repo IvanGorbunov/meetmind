@@ -90,6 +90,10 @@ class Settings(BaseSettings):
 Ответ:""",
         description="RAG prompt template with {context} and {question} placeholders"
     )
+    rag_top_k: int = Field(
+        default=5,
+        description="Number of similar segments to retrieve"
+    )
     
     class Config:
         env_file = ".env"

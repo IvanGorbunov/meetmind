@@ -122,7 +122,7 @@ async def transcribe_media(
             metadata={
                 "transcript_id": transcript.id,
                 "filename": transcript.filename,
-                "uploaded_at": transcript.uploaded_at.isoformat(),
+                "uploaded_at": transcript.uploaded_at,
                 "source_type": "audio"
             }
         )

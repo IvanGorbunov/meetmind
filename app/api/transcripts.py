@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.db.database import get_db
 from app.db.models import Transcript
@@ -80,7 +80,7 @@ async def upload_transcript(
         metadata={
             "transcript_id": transcript.id,
             "filename": transcript.filename,
-            "uploaded_at": transcript.uploaded_at.isoformat()
+            "uploaded_at": transcript.uploaded_at
         }
     )
     

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-from typing import List, Dict, Any
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional
+from datetime import date, datetime, timedelta
 
 from app.db.database import get_db
 from app.db.models import SearchHistory
@@ -14,11 +15,15 @@ router = APIRouter(prefix="/search", tags=["Search"])
 class SearchRequest(BaseModel):
     """Request model for search."""
     question: str
+    date_from: Optional[datetime] = Field(default=None, description="Start date for search (inclusive)")
+    date_to: Optional[datetime] = Field(default=None, description="End date for search (inclusive)")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "question": "Когда обсуждали дедлайн проекта?"
+                "question": "Когда обсуждали дедлайн проекта?",
+                "date_from": "2024-01-01T12:00:00+03:00",
+                "date_to": "2024-01-31T23:59:59+03:00"
             }
         }
 
@@ -70,9 +75,23 @@ async def search_transcripts(
             detail="No transcripts indexed yet. Please upload some transcripts first."
         )
     
+    # Calculate date range if not provided
+    date_from = request.date_from
+    date_to = request.date_to
+
+    today = datetime.utcnow()
+    if not date_from:
+        date_from = today - timedelta(days=7)
+    if not date_to:
+        date_to = today
+    
     # Perform search
     try:
-        result = rag_service.search(request.question)
+        result = rag_service.search(
+            question=request.question,
+            date_from=date_from,
+            date_to=date_to
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,

@@ -1,5 +1,7 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
+import datetime
+from datetime import date, timezone
 
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -60,7 +62,7 @@ class RAGService:
         if self._retriever is None:
             self._retriever = self.vectorstore.as_retriever(
                 search_type="similarity",
-                search_kwargs={"k": 5}
+                search_kwargs={"k": self.settings.rag_top_k}
             )
         return self._retriever
     
@@ -104,21 +106,53 @@ class RAGService:
         
         return len(chunks)
     
-    def search(self, question: str) -> Dict[str, Any]:
+    def search(
+        self, 
+        question: str, 
+        date_from: Optional[datetime] = None, 
+        date_to: Optional[datetime] = None
+    ) -> Dict[str, Any]:
         """
         Search for answer using RAG with LCEL.
         
         Args:
             question: User question
+            date_from: Start date filter (inclusive)
+            date_to: End date filter (inclusive)
             
         Returns:
             Dict with 'answer' and 'sources'
         """
-        # Get source documents separately for transparency
-        source_docs = self.retriever.invoke(question)
+        # Construct filter
+        filter_dict = {}
+        if not date_from or not date_to:
+            raise ValueError("Both date_from and date_to must be provided")
+
+        conditions = []
+        conditions.append({"uploaded_at": {"$gte": date_from.astimezone(timezone.utc).timestamp()}})
+        conditions.append({"uploaded_at": {"$lte": date_to.astimezone(timezone.utc).timestamp()}})
+        filter_dict = {"$and": conditions}
+
+        # Get source documents with filter
+        source_docs = self.vectorstore.similarity_search(
+            question,
+            k=self.settings.rag_top_k,
+            filter=filter_dict
+        )
+                
+        context = _format_docs(source_docs)
         
-        # Run the RAG chain
-        answer = self.rag_chain.invoke({"question": question})
+        # Run the generation manually using the components
+        chain = (
+            self.prompt 
+            | get_llm() 
+            | StrOutputParser()
+        )
+        
+        answer = chain.invoke({
+            "context": context,
+            "question": question
+        })
         
         # Extract source information
         sources = []

@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text, DateTime
+from sqlalchemy import String, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 
@@ -13,9 +13,9 @@ class Transcript(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    uploaded_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
+    uploaded_at: Mapped[int] = mapped_column(
+        Integer,
+        default=int(datetime.utcnow().timestamp()),
         nullable=False
     )
     
@@ -31,9 +31,9 @@ class SearchHistory(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
-    searched_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
+    searched_at: Mapped[int] = mapped_column(
+        Integer,
+        default=int(datetime.utcnow().timestamp()),
         nullable=False
     )
     
