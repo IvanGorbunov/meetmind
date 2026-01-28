@@ -12,16 +12,22 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create a non-root user
+RUN useradd -ms /bin/bash appuser
+
 # Copy application code
 COPY . .
 
-# Create directories for volumes
-RUN mkdir -p /app/data /app/chroma_db /app/media_uploads
+# Create directories for volumes and set permissions for the app user
+RUN mkdir -p /app/data /app/chroma_db /app/media_uploads && \
+    chmod +x /app/entrypoint-web.sh && \
+    chown -R appuser:appuser /app
 
-COPY ./entrypoint-web.sh /app/entrypoint-web.sh
-
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint-web.sh
+# Switch to non-root user
+USER appuser
 
 # Expose API port
 EXPOSE 8000
+
+# Run entrypoint script
+ENTRYPOINT ["./entrypoint-web.sh"]
