@@ -211,3 +211,9 @@ chroma_db*/
 meetmind.db*
 promt.md
 verify_changes.py
+
+# Docker volumes
+data/
+media_uploads/
+
+.cursor/

@@ -1,0 +1,24 @@
+version: '3.8'
+name: meetmind
+
+services:
+  web:
+    build: .
+    ports:
+      - "${EXTERNAL_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./media_uploads:/app/media_uploads
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/meetmind.db
+      - CHROMA_PERSIST_DIRECTORY=/app/chroma_db
+      - MEDIA_UPLOAD_DIR=/app/media_uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
